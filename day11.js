@@ -8,7 +8,7 @@ const eightDirection = [
   [1, -1], [1, 0], [1, 1],
 ];
 
-const eightNeighbors = (board) => (r, c) =>
+const eightNeighbors = (board, r, c) =>
   eightDirection.map(([x, y]) => board[r + x]?.[c + y])
     .filter(Boolean)
     .reduce((acc, val) => {
@@ -21,13 +21,12 @@ const flipBy = (neighborFn, occupyFn, emptyFn) => {
     const col = board[0].length;
     const row = board.length;
     const nextBoard = seq(row).map(() => '');
-    const neighbors = neighborFn(board);
     for (const r of seq(row)) {
       for (const c of seq(col)) {
         if (board[r][c] === 'L' ) {
-          nextBoard[r] += occupyFn(neighbors(r, c)) ? '#' : 'L';
+          nextBoard[r] += occupyFn(neighborFn(board, r, c)) ? '#' : 'L';
         } else if (board[r][c] === '#') {
-          nextBoard[r] += emptyFn(neighbors(r, c)) ? 'L' : '#';
+          nextBoard[r] += emptyFn(neighborFn(board, r, c)) ? 'L' : '#';
         } else {
           nextBoard[r] += '.';
         }
@@ -58,7 +57,7 @@ const findUntilNoFloor = (neighbors, board, r, c, i = 1) => {
   return findUntilNoFloor(queenNext, board, r, c, i + 1);
 };
 
-const queenNeighbors = (board) => (r, c) =>
+const queenNeighbors = (board, r, c) =>
   findUntilNoFloor(seq(8).map(() => '.'), board, r, c)
     .filter(Boolean)
     .reduce((acc, val) => {
