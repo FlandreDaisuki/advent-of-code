@@ -11,14 +11,32 @@ busServices
 
 // ⚠️ You can't get right answer by Number(float64) in part 2
 
-const mod = (a, b) => (((a) % b) + b) % b; // always return positive
-
 // check each bus id is coprime to others by 👀
 const busServicesWithDelay = busServices.map((e, i) => {
   if (e) {
-    return [BigInt(e), BigInt(mod(e - i, e))];
+    return [BigInt(e), BigInt(e - i)];
   }
 }).filter(Boolean);
+
+// Extended Euclidean Algorithm
+// ax + by = gcd(a, b) = 1
+// ax + by ≡ ax (mod b) ≡ 1 (mod b)
+const egcd = (a, b) => {
+  if (b === 0n) {
+    return [a, 1n, 0n];
+  }
+  const [g, x, y] = egcd(b, a % b);
+  return [g, y, x - (a / b) * y];
+};
+
+// ref: https://stackoverflow.com/a/9758173
+const modinv = (a, m) => {
+  const [g, x, y] = egcd(a, m);
+  if (g !== 1n) {
+    throw new Error(`No result of modinv(${[a, m]})`);
+  }
+  return x % m;
+};
 
 // Chinese Remainder Theorem
 // Assume m[1], m[2], ..., m[i] are coprime to each other and have solution
@@ -35,19 +53,11 @@ const busServicesWithDelay = busServices.map((e, i) => {
 
 const ChineseRemainder = (list) => {
   const M = list.map((item) => item[0]).reduce((acc, val) => acc * val);
-  const T = (a, b) => {
-    // t * a ≡ 1 (mod b)
-    let t = 0n;
-    do {
-      t += 1n;
-    } while (a * t % b !== 1n);
-    return t;
-  };
   const N = list
     .map(([m, a]) => {
       // x ≡ a (mod m)
       const w = M / m;
-      const t = T(w, m);
+      const t = modinv(w, m);
       return w * t * a;
     })
     .reduce((a, b) => a + b);
