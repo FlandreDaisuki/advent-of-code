@@ -28,11 +28,18 @@ seq(30000000).reduce((state, idx) => {
     val = last1 - last2;
   }
 
-  state.cache.set(val, (state.cache.get(val) ?? []).concat([idx]).slice(-2));
+  if (!state.cache.get(val)) {
+    state.cache.set(val, []);
+  }
+  const last2 = state.cache.get(val);
+  last2.push(idx);
+  if (last2.length > 2) {
+    last2.shift();
+  }
   state.prev = val;
   return state;
 }, { cache: new Map, prev: null }).prev; // answer 2
 console.timeEnd('part2');
 
-// time cost ~ 22s on nodejs
-// time cost ~ 33s on firefox cold start at about:blank with warning 3 times script too slow
+// time cost ~ 11s on nodejs
+// time cost ~ 24s on firefox cold start at about:blank with warning 2 times script too slow
