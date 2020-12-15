@@ -17,29 +17,34 @@ seq(2020).reduce((list, idx) => {
 }, inputList).slice(-1)[0]; // answer 1
 
 console.time('part2');
-seq(30000000).reduce((state, idx) => {
-  let val;
-  if (inputList[idx] !== undefined) {
-    val = inputList[idx];
-  } else if (!state.cache.get(state.prev) || state.cache.get(state.prev).length < 2) {
-    val = 0;
-  } else {
-    const [last2, last1] = state.cache.get(state.prev);
-    val = last1 - last2;
-  }
+const part2 = () => {
+  const cache = new Map;
+  let prev = null;
+  for (let idx = 0; idx < 30000000; idx++) {
+    let val;
+    if (inputList[idx] !== undefined) {
+      val = inputList[idx];
+    } else if (!cache.get(prev) || cache.get(prev).length < 2) {
+      val = 0;
+    } else {
+      const [last2, last1] = cache.get(prev);
+      val = last1 - last2;
+    }
 
-  if (!state.cache.get(val)) {
-    state.cache.set(val, []);
+    if (!cache.get(val)) {
+      cache.set(val, []);
+    }
+    const last2 = cache.get(val);
+    last2.push(idx);
+    if (last2.length > 2) {
+      last2.shift();
+    }
+    prev = val;
   }
-  const last2 = state.cache.get(val);
-  last2.push(idx);
-  if (last2.length > 2) {
-    last2.shift();
-  }
-  state.prev = val;
-  return state;
-}, { cache: new Map, prev: null }).prev; // answer 2
+  return prev;
+};
+part2(); // answer 2
 console.timeEnd('part2');
 
-// time cost ~ 11s on nodejs
-// time cost ~ 24s on firefox cold start at about:blank with warning 2 times script too slow
+// time cost ~ 8.3s on nodejs
+// time cost ~ 21s on firefox cold start at about:blank with warning 1 ~ 2 times script too slow
