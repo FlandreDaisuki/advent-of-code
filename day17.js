@@ -45,10 +45,8 @@ const Tensor = {
   }, tensor),
   get: (tensor, point) => point.reduce((t, p) => t?.[p], tensor),
   *shapeIter(shape) {
-    if (shape.length === 1) {
-      for (const i of seq(shape)) {
-        yield [i];
-      }
+    if (!Array.isArray(shape)) {
+      yield shape;
     }
     const [axis, ...rest] = shape;
     for (const i of seq(axis)) {
