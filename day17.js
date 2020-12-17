@@ -1,4 +1,4 @@
-const inputState = document.body.textContent
+const inputState = (this.window ? document.body.textContent : require('fs').readFileSync('day17.txt', 'utf8'))
   .split('\n').filter(Boolean)
   .map((row) => row.split('').filter(Boolean));
 
