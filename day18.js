@@ -5,6 +5,7 @@ function consume(stack) {
   if (stack.length < 3) {
     return false;
   }
+
   const last3 = stack.slice(-3);
   if (last3.length === 3 && last3.every(Boolean)) {
     const [a, op, b] = last3;
@@ -15,28 +16,32 @@ function consume(stack) {
       return true;
     }
   }
-  if (stack[stack.length - 1] === ')') {
+
+  const last = stack.slice(-1)[0];
+  if (last === ')') {
     const i = stack.lastIndexOf('(');
-    if (i < 0) { throw new Error('Parenthesis is not matching'); }
-    const subExpr = stack.splice(i, 99).slice(1, -1);
-    stack.push(parse(subExpr));
+    if (i < 0) { throw new Error('parenthesis are not matched'); }
+    const subExpr = stack.splice(i, Infinity).slice(1, -1);
+    stack.push(calcPreorder(subExpr)); // mutual recursion
     return true;
   }
+
   return false;
 }
-function parse(expr) {
+
+function calcPreorder(expr) {
   if (expr.length === 1) {
     return expr[0];
   }
   const stack = [];
   for (const char of expr) {
     stack.push(Number(char) ? Number(char) : char);
-    while (consume(stack));
+    while (consume(stack)); // mutual recursion
   }
   return stack[0];
 }
 
-inputLines.map((expr) => parse(expr.replace(/\s/g, ''))).reduce((a, b) => a + b, 0); //answer 1
+inputLines.map((expr) => calcPreorder(expr.replace(/\s/g, ''))).reduce((a, b) => a + b, 0); //answer 1
 
 const calcNoParenthesis = (expr) => {
   const i = expr.indexOf('+');
@@ -49,7 +54,7 @@ const calcNoParenthesis = (expr) => {
   }
 };
 
-function parse2(expr) {
+const calcAddBeforeMultiply = (expr) => {
   if (expr.length === 1) {
     return expr[0];
   }
@@ -58,12 +63,12 @@ function parse2(expr) {
     stack.push(Number(char) ? Number(char) : char);
     if (char === ')') {
       const i = stack.lastIndexOf('(');
-      const subExpr = stack.splice(i, 999).slice(1, -1);
+      const subExpr = stack.splice(i, Infinity).slice(1, -1);
       stack.push(calcNoParenthesis(subExpr));
     }
   }
 
-  return stack.includes('(') ? parse2(stack) : calcNoParenthesis(stack);
-}
+  return stack.includes('(') ? calcAddBeforeMultiply(stack) : calcNoParenthesis(stack);
+};
 
-inputLines.map((expr) => parse2(expr.replace(/\s/g, ''))).reduce((a, b) => a + b, 0); // answer 2
+inputLines.map((expr) => calcAddBeforeMultiply(expr.replace(/\s/g, ''))).reduce((a, b) => a + b, 0); // answer 2
