@@ -63,6 +63,7 @@ const calcAddBeforeMultiply = (expr) => {
     stack.push(Number(char) ? Number(char) : char);
     if (char === ')') {
       const i = stack.lastIndexOf('(');
+      if (i < 0) { throw new Error('parenthesis are not matched'); }
       const subExpr = stack.splice(i, Infinity).slice(1, -1);
       stack.push(calcNoParenthesis(subExpr));
     }
