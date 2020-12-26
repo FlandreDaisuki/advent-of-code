@@ -33,5 +33,59 @@ const move = (sequence, count) => {
 
 rotateUntil(1, move(sequence, 100)).slice(1).join(''); //answer 1
 
-const bigSequence = sequence.concat(seq(1000000 - sequence.length, (i) => i + 1 + sequence.length));
-rotateUntil(1, move(bigSequence, 10000000)).slice(1, 3).reduce((a, b) => a * b); // maybe answer 2 ???????????????
+const debug = (cup, count) => {
+  const s = [];
+  while (cup && count) {
+    s.push(cup.label);
+    cup = cup.next;
+    count -= 1;
+  }
+  console.debug(String(s));
+};
+
+const CUP_TOTAL = 1000000;
+const circleLinkList = seq(CUP_TOTAL + 1) // ignore [0]
+  .map((label) => ({ label, next: null }))
+  .map((cup, i, a) => {
+    cup.next = a[i + 1] ?? a[1];
+    return cup;
+  });
+
+sequence.forEach((label, i, a) => {
+  const nextLabel = a[i + 1] ?? sequence.length + 1;
+  if (!i) {
+    circleLinkList[CUP_TOTAL].next = circleLinkList[label];
+  }
+  circleLinkList[label].next = circleLinkList[nextLabel];
+});
+
+debug(circleLinkList[CUP_TOTAL], 30);
+
+const linkListMove = (ll, count) => {
+  let currentCup = ll[CUP_TOTAL].next;
+
+  /* eslint-disable-next-line no-unused-vars */
+  for (const _ of seq(count)) {
+    const pickupCups = [currentCup.next, currentCup.next.next, currentCup.next.next.next];
+    currentCup.next = pickupCups[2].next;
+
+    const pickupLabels = pickupCups.map((cup) => cup.label);
+    let destLabel = currentCup.label - 1;
+    while (destLabel < 1 || pickupLabels.includes(destLabel)) {
+      destLabel = destLabel > 1 ? (destLabel - 1) : CUP_TOTAL;
+    }
+
+    const destCup = ll[destLabel] ?? ll[CUP_TOTAL];
+    const destCupNext = destCup.next;
+    destCup.next = pickupCups[0];
+    pickupCups[2].next = destCupNext;
+
+    currentCup = currentCup.next;
+  }
+
+  return ll;
+};
+
+linkListMove(circleLinkList, 10000000);
+
+circleLinkList[1].next.label * circleLinkList[1].next.next.label; // answer 2
