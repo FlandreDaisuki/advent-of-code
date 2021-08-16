@@ -1,17 +1,27 @@
 #!/usr/bin/env ocaml
 
-(* https://stackoverflow.com/a/23456034/7768661 *)
-let read_lines name : string list =
-  let ic = open_in name in
-  let try_read () =
-    try Some (input_line ic) with End_of_file -> None in
-  let rec loop acc = match try_read () with
-    | Some s -> loop (s :: acc)
-    | None -> close_in ic; List.rev acc in
-  loop []
+(* https://ocaml.org/learn/tutorials/streams.html *)
+let line_stream_of_channel channel =
+  Stream.from (fun _ ->
+    try Some (input_line channel) with End_of_file -> None)
 
-let lines = read_lines "day01.txt"
-let int_list = List.map int_of_string lines
+let stream_map f stream =
+  let rec next i =
+    try Some (f (Stream.next stream))
+    with Stream.Failure -> None in
+  Stream.from next
 
-let answer1 = List.fold_left ( + ) 0 int_list
+let stream_fold f stream init =
+  let result = ref init in
+  Stream.iter
+    (fun x -> result := f x !result)
+    stream;
+  !result
+
+let line_stream = line_stream_of_channel (open_in "day01.txt")
+
+let int_stream = stream_map int_of_string line_stream
+
+let answer1 = stream_fold ( + ) int_stream 0
+
 let () = Printf.printf "answer 1: %d\n" answer1
