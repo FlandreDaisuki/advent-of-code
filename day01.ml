@@ -1,4 +1,5 @@
 #!/usr/bin/env ocaml
+(* The OCaml toplevel, version 4.12.0 *)
 
 (* https://ocaml.org/learn/tutorials/streams.html *)
 let line_stream_of_channel channel =
@@ -11,16 +12,16 @@ let stream_map f stream =
     with Stream.Failure -> None in
   Stream.from next
 
-let stream_fold f stream init =
+let stream_fold f init stream =
   let result = ref init in
   Stream.iter
-    (fun x -> result := f x !result)
+    (fun x -> result := f !result x)
     stream;
   !result
 
 let line_stream = line_stream_of_channel (open_in "day01.txt")
 let int_stream = stream_map int_of_string line_stream
-let answer1 = stream_fold ( + ) int_stream 0
+let answer1 = stream_fold ( + ) 0 int_stream
 
 let () = Printf.printf "answer 1: %d\n" answer1
 
@@ -42,7 +43,7 @@ let rec withdraw_until_seen out_stream seen sum =
 
 let line_stream = line_stream_of_channel (open_in "day01.txt")
 let int_stream = stream_map int_of_string line_stream
-let int_list = stream_fold (fun i acc -> acc @ [i]) int_stream []
+let int_list = stream_fold (fun acc i -> acc @ [i]) [] int_stream
 let cycle_int_stream = cycle int_list
 let answer2 = withdraw_until_seen
   cycle_int_stream
