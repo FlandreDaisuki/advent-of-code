@@ -75,3 +75,21 @@ let overlaps = List.fold_left (PointSet.union) PointSet.empty field_intersection
 let answer1 = PointSet.cardinal overlaps
 
 let () = printf "answer 1: %d\n" answer1
+
+let answer2 =
+    let claim_with_fields =
+      List.map (fun line ->
+        let claim = line |> transform_to_claim in
+        let field = claim |> claim_field in
+        (claim, field)
+      ) lines
+    in
+    let filtered =
+      List.filter (
+        fun (_, field) -> PointSet.is_empty (PointSet.inter field overlaps)
+      ) claim_with_fields
+    in
+    let (found_claim, _) = List.hd filtered in
+    found_claim.id
+
+let () = printf "answer 2: %d\n" answer2
