@@ -5,7 +5,6 @@
 (* #load "str.cma";; *)
 
 open Printf;;
-Printexc.record_backtrace true;;
 
 let line_stream_of_channel channel =
   Stream.from (fun _ ->
@@ -67,9 +66,6 @@ module Record = struct
     let diff_date = Date.compare first.date second.date in
     if diff_date != 0 then diff_date else Time.compare first.time second.time
   let init (id, date, time, action) = { id = id; date = date; time = time; action = action }
-  let id src = src.id
-  let action src = src.action
-  let time src = src.time
   let assign_id src dst = init(src.id, dst.date, dst.time, dst.action)
   let of_string line =
     let record_regexp =
@@ -117,25 +113,27 @@ let sorted_records = List.fast_sort (Record.compare) records
 
 module IntMap = Map.Make(Int)
 
+type time_range = Time.t * Time.t
+
 type guard = {
   id: int;
   sleep: int; (* in minutes *)
-  time_ranges: (Time.t * Time.t) list;
+  time_ranges: time_range list;
 }
 
 let guard_map =
   let guard_mapping = ref IntMap.empty in
   let last_id = ref 0 in
   let last_sleep_time = ref (Time.init(0, 0)) in
-  List.iter (fun r ->
-    match Record.id r with
+  List.iter (fun (r: Record.t) ->
+    match r.id with
     | Some id -> last_id := id;
     | None ->
-      match Record.action r with
+      match r.action with
       | Shift -> ();
-      | Asleep -> last_sleep_time := Record.time r;
+      | Asleep -> last_sleep_time := r.time;
       | Wake ->
-        let diff_sleep = Time.diff_in_minutes (Record.time r) (!last_sleep_time) in
+        let diff_sleep = Time.diff_in_minutes (r.time) (!last_sleep_time) in
         let time_range = (!last_sleep_time, r.time) in
         guard_mapping := IntMap.update (!last_id) (fun found_opt ->
           match found_opt with
@@ -178,4 +176,57 @@ let answer1 =
 ;;
 
 let () = printf "answer 1: %d\n" answer1
+;;
+
+let answer2 =
+  let module MinuteGuardsMap = IntMap in
+  let append_guard_id_into_histogram guard histogram minute =
+    MinuteGuardsMap.update minute (fun guard_ids ->
+      match guard_ids with Some ids -> Some(guard.id :: ids) | None -> Some([guard.id])
+    ) histogram
+  in
+  let append_guard_id_into_histogram_by_time_range guard histogram (start_t, end_t) =
+    let diff_in_minute = (Time.diff_in_minutes end_t start_t) in
+    let add_offset = Int.add start_t.minute in
+    let minutes = List.init diff_in_minute add_offset in
+    List.fold_left (append_guard_id_into_histogram guard) histogram minutes
+  in
+  let histogram_by_minutes_and_guard_ids =
+    List.fold_left (fun histogram guard ->
+      List.fold_left (
+        append_guard_id_into_histogram_by_time_range guard
+      ) histogram guard.time_ranges
+    ) MinuteGuardsMap.empty guards
+  in
+  let laziest_guard_list =
+    List.map (fun (minute, guard_ids) ->
+      let module GuardIdFrequencyMap = IntMap in
+      let guard_id_freq_map =
+        List.fold_left (fun freq_map guard_id ->
+          GuardIdFrequencyMap.update guard_id (fun count ->
+            match count with
+            | Some c -> Some(c+1)
+            | None -> Some(1)
+          ) freq_map
+        ) GuardIdFrequencyMap.empty guard_ids
+      in
+      List.fold_left (fun (max_id, max_count) (id, count) ->
+        if count > max_count then (id, count) else (max_id, max_count)
+      ) (0, -1) (GuardIdFrequencyMap.bindings guard_id_freq_map)
+    ) (MinuteGuardsMap.bindings histogram_by_minutes_and_guard_ids)
+  in
+  let laziest_guard_with_minute_list =
+    List.mapi (fun minute (id, count) -> (minute, id, count)) laziest_guard_list
+  in
+  let laziest_guard_with_minute =
+    List.fold_left (fun laziest_guard current_guard ->
+      let (_, _, l_count) = laziest_guard in
+      let (_, _, count) = current_guard in
+      if count > l_count then current_guard else laziest_guard
+    ) (-1, 0, -1) laziest_guard_with_minute_list
+  in
+  match laziest_guard_with_minute with (minute, id, _) -> minute * id
+;;
+
+let () = printf "answer 2: %d\n" answer2
 ;;
