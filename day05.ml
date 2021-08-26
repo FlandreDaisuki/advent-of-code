@@ -56,8 +56,25 @@ let rec reduce i s =
       reduce (i + 1) s
 ;;
 
-let answer1 = String.length(reduce 0 line)
+let answer1 = String.length(reduce 0 line);;
+
+let () = printf "answer 1: %d\n" answer1;;
+
+module CharSet = Set.Make(Char);;
+
+let lower_char_set =
+  Seq.fold_left (fun set ch ->
+    CharSet.add (Char.lowercase_ascii ch) set
+  ) CharSet.empty (String.to_seq line)
 ;;
 
-let () = printf "answer 1: %d\n" answer1
+let answer2 =
+  List.fold_left (fun best_count lower_ch ->
+    let regex_i = Str.regexp_case_fold (String.make 1 lower_ch) in
+    let removed = Str.(global_substitute regex_i (fun _ -> "") line) in
+    let count = String.length (reduce 0 removed) in
+    min count best_count
+  ) max_int (CharSet.elements lower_char_set)
 ;;
+
+let () = printf "answer 2: %d\n" answer2;;
