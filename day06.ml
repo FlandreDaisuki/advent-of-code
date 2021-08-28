@@ -62,6 +62,12 @@ module Area = struct
     p.x == a.rb.x ||
     p.y == a.lt.y ||
     p.y == a.rb.y
+  let to_points (a: t) =
+    let ys = List.init (height a) (Int.add a.lt.y) in
+    let xs = List.init (width a) (Int.add a.lt.x) in
+    List.fold_left (fun points y ->
+      points @ List.map (fun x -> Point.init (x, y)) xs
+    ) [] ys
 end
 
 let finite_area = List.fold_left (Area.union) Area.empty points
@@ -82,14 +88,9 @@ let print_world world =
   ) world
 ;;
 let world =
-  let ys = List.init (Area.height finite_area) (Int.add finite_area.lt.y) in
-  let xs = List.init (Area.width finite_area) (Int.add finite_area.lt.x) in
   let init_world =
-    List.fold_left (fun wps y ->
-      wps @ List.map (fun x ->
-        { position = Point.init (x, y); nearest = Occupied(Point.origin); distance = max_int }
-      ) xs
-    ) [] ys
+    Area.to_points finite_area
+    |> List.map (fun point -> { position = point; nearest = Occupied(Point.origin); distance = max_int })
   in
   List.map (fun wp ->
     let distance_by p = Point.distance wp.position p in
@@ -146,3 +147,41 @@ let answer1 =
 ;;
 
 let () = printf "answer 1: %d\n" answer1;;
+(*
+let answer2 = (* Stack overflow during evaluation *)
+  let finite_area_points = Area.to_points finite_area in
+  let sum_distance_world_init = List.init (List.length finite_area_points) (fun _ -> 0) in
+  let distance_worlds =
+    List.map (fun point ->
+      List.map (Point.distance point) finite_area_points
+    ) points
+  in
+  let sum_distance_world =
+    List.fold_left (List.map2 (+)) sum_distance_world_init distance_worlds
+  in
+  sum_distance_world
+  |> List.filter (fun d -> d < 10000)
+  |> List.length
+;;
+*)
+
+let answer2_mut =
+  let finite_area_points = Area.to_points finite_area in
+  let sum_distance_world = Array.init (List.length finite_area_points) (fun _ -> 0) in
+  let distance_worlds =
+    List.map (fun point ->
+      List.map (Point.distance point) finite_area_points
+    ) points
+  in
+  List.iter (fun distance_world ->
+    List.iteri (fun i d ->
+      sum_distance_world.(i) <- sum_distance_world.(i) + d;
+    ) distance_world
+  ) distance_worlds;
+
+  sum_distance_world
+  |> Array.to_list
+  |> List.filter (fun d -> d < 10000)
+  |> List.length
+
+let () = printf "answer 2: %d\n" answer2_mut;;
