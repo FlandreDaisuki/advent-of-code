@@ -31,28 +31,6 @@ const drawSegment = (segment) => {
   const points = [];
   const dx = Math.sign(e.x - s.x);
   const dy = Math.sign(e.y - s.y);
-
-  // vertical
-  if (dx === 0) {
-    const x = s.x;
-    const yTermination = e.y + dy;
-    for (let y = s.y; y !== yTermination; y += dy) {
-      points.push(toPoint(x, y));
-    }
-    return points;
-  }
-
-  // horizontal
-  if (dy === 0) {
-    const y = s.y;
-    const xTermination = e.x + dx;
-    for (let x = s.x; x !== xTermination; x += dx) {
-      points.push(toPoint(x, y));
-    }
-    return points;
-  }
-
-  // diagonal
   const xTermination = e.x + dx;
   const yTermination = e.y + dy;
   for (let x = s.x, y = s.y; x !== xTermination || y !== yTermination; x += dx, y += dy) {
