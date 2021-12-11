@@ -8,6 +8,9 @@ const getProblemText = () => {
   return require('fs').readFileSync(filename, 'utf8');
 };
 
+const range = (start, end) => Array.from({ length: end - start }, (_, i) => start + i);
+const range0 = (end) => range(0, end);
+
 const octopuses2D = getProblemText()
   .split('\n')
   .filter(Boolean)
@@ -15,18 +18,10 @@ const octopuses2D = getProblemText()
     line.match(/\d/g).map(Number).map((energy, c) => ({ r, c, energy })),
   );
 
-globalThis.draw = function(octopuses) {
-  const energy2D = octopuses2D.map((line) => line.map((octopus) => octopus.energy));
-  for (const octopus of octopuses) {
-    energy2D[octopus.r][octopus.c] = octopus.energy;
-  }
-  console.log(energy2D.map((line) => line.join(' ')).join('\n'));
-};
-
 const R = octopuses2D.length;
 const C = octopuses2D[0].length;
 const octopuses = octopuses2D.flat();
-const get8Neighbors = (octopuses) => (octopus) => {
+const getEightNeighbors = (octopuses) => (octopus) => {
   const neighbors = [];
   const { r, c } = octopus;
   if (r > 0) neighbors.push(octopuses[(r - 1) * C + c]);
@@ -52,7 +47,7 @@ const nextStep = (octopuses) => {
     const flash = queue.shift();
     toBeFlash.add(flash);
 
-    const neighbors = get8Neighbors(nextOctopuses)(flash);
+    const neighbors = getEightNeighbors(nextOctopuses)(flash);
     for (const neighbor of neighbors) {
       neighbor.energy += 1;
       if (neighbor.energy > 9 && !toBeFlash.has(neighbor) && !queue.includes(neighbor)) {
@@ -69,23 +64,35 @@ const nextStep = (octopuses) => {
   };
 };
 
-const answer1 =
-  Array.from({ length: 100 }).reduce((prev) => {
-    const { flashCount, nextOctopuses } = nextStep(prev.octopuses);
-    return { flashSum: prev.flashSum + flashCount, octopuses: nextOctopuses };
-  }, { flashSum: 0, octopuses }).flashSum;
+const answer1 = ((initOctopuses) => {
+  const init = { flashSum: 0, octopuses: initOctopuses };
+
+  return range0(100).reduce((acc) => {
+    const { flashSum, octopuses } = acc;
+    const { flashCount, nextOctopuses } = nextStep(octopuses);
+
+    return {
+      flashSum: flashSum + flashCount,
+      octopuses: nextOctopuses,
+    };
+  }, init).flashSum;
+
+})(octopuses);
 console.log('answer1', answer1);
 
 const answer2 = ((initOctopuses) => {
   let flashCount = 0;
   let octopuses = initOctopuses;
   let counter = 0;
+
   do {
     counter += 1;
     const result = nextStep(octopuses);
     flashCount = result.flashCount;
     octopuses = result.nextOctopuses;
   } while (flashCount !== octopuses.length);
+
   return counter;
+
 })(octopuses);
 console.log('answer2', answer2);
