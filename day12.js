@@ -58,7 +58,7 @@ const answer1 = traverse(canVisitNextCave1).length;
 console.log('answer1', answer1);
 
 
-const hasSmallDuplicate = (arr) => {
+const hasDuplicatedSmallCave = (arr) => {
   const smalls = arr.filter(isSmallCave);
   return smalls.length !== new Set(smalls).size;
 };
@@ -67,7 +67,7 @@ const canVisitNextCave2 = (footprints, nextCave) => {
     return true;
   }
   if (isSmallCave(nextCave) && nextCave !== 'start') {
-    return !footprints.includes(nextCave) || !hasSmallDuplicate(footprints);
+    return !footprints.includes(nextCave) || !hasDuplicatedSmallCave(footprints);
   }
   return false;
 };
