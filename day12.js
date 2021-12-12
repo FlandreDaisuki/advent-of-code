@@ -25,22 +25,36 @@ const pathHashMap = Object.fromEntries([...caves].map((cave) => {
 
 const isSmallCave = (cave) => /[a-z]+/.test(cave);
 const isBigCave = (cave) => /[A-Z]+/.test(cave);
-const traverse = (footprints = ['start']) => {
-  const last = lastItem(footprints);
-  if (last === 'end') {
-    return [String(footprints)];
-  }
 
-  const all = [];
-  for (const nextCave of pathHashMap[last]) {
-    if (isBigCave(nextCave) || (isSmallCave(nextCave) && !footprints.includes(nextCave))) {
-      all.push(...traverse(footprints.concat(nextCave)));
+const traverse = (canVisitNextCave) => {
+  const recursiveTraverse = (footprints) => {
+    const last = lastItem(footprints);
+    if (last === 'end') {
+      return [String(footprints)];
     }
-  }
-  return all;
+
+    const all = [];
+    for (const nextCave of pathHashMap[last]) {
+      if (canVisitNextCave(footprints, nextCave)) {
+        all.push(...recursiveTraverse(footprints.concat(nextCave)));
+      }
+    }
+    return all;
+  };
+  return recursiveTraverse(['start']);
 };
 
-const answer1 = traverse().length;
+const canVisitNextCave1 = (footprints, nextCave) => {
+  if (isBigCave(nextCave)) {
+    return true;
+  }
+  if (isSmallCave(nextCave)) {
+    return !footprints.includes(nextCave);
+  }
+  return false;
+};
+
+const answer1 = traverse(canVisitNextCave1).length;
 console.log('answer1', answer1);
 
 
@@ -48,20 +62,15 @@ const hasSmallDuplicate = (arr) => {
   const smalls = arr.filter(isSmallCave);
   return smalls.length !== new Set(smalls).size;
 };
-
-const traverse2 = (footprints = ['start']) => {
-  const last = lastItem(footprints);
-  if (last === 'end') {
-    return [String(footprints)];
+const canVisitNextCave2 = (footprints, nextCave) => {
+  if (isBigCave(nextCave)) {
+    return true;
   }
-
-  const all = [];
-  for (const nextCave of pathHashMap[last]) {
-    if (isBigCave(nextCave) || (isSmallCave(nextCave) && (!footprints.includes(nextCave) || !hasSmallDuplicate(footprints)) && nextCave !== 'start')) {
-      all.push(...traverse2(footprints.concat(nextCave)));
-    }
+  if (isSmallCave(nextCave) && nextCave !== 'start') {
+    return !footprints.includes(nextCave) || !hasSmallDuplicate(footprints);
   }
-  return all;
+  return false;
 };
-const answer2 = traverse2().length;
+
+const answer2 = traverse(canVisitNextCave2).length;
 console.log('answer2', answer2);
