@@ -72,5 +72,37 @@ const canVisitNextCave2 = (footprints, nextCave) => {
   return false;
 };
 
+// about 950 ms
+console.time('answer2-recursion');
 const answer2 = traverse(canVisitNextCave2).length;
+console.timeEnd('answer2-recursion');
+
 console.log('answer2', answer2);
+
+const iteration = (canVisitNextCave) => {
+  const queue = [['start']];
+  let count = 0;
+
+  while (queue.length) {
+    const footprints = queue.shift();
+    const last = lastItem(footprints);
+    if (last === 'end') {
+      count++;
+      continue;
+    }
+
+    for (const nextCave of pathHashMap[last]) {
+      if (canVisitNextCave(footprints, nextCave)) {
+        queue.push(footprints.concat(nextCave));
+      }
+    }
+  }
+  return count;
+};
+
+// about 34 sec
+console.time('answer2-iteration');
+const answer2_2 = iteration(canVisitNextCave2);
+console.timeEnd('answer2-iteration');
+
+console.log('answer2_2', answer2_2);
