@@ -50,7 +50,8 @@ const toCharHistogram = (patternHistogram) => {
     histogram[l] = (histogram[l] ?? 0) + count;
     histogram[r] = (histogram[r] ?? 0) + count;
   }
-  // 除了頭尾字元都被算了兩次，頭尾字元次數為奇數，故用 Math.ceil 就不用加 1 除以 2 了
+  // Each char will be counted twice except for the first and last char.
+  // So, we divide by 2 with rounding up instead add 1 to them.
   return Object.fromEntries(
     Object.entries(histogram).map(([char, count]) => [char, Math.ceil(count / 2)]),
   );
