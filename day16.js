@@ -6,9 +6,6 @@ const getProblemText = () => {
   }
   const filename = process.argv[1].replace(/.*(day\d+)[.]js/, '$1.txt');
   return require('fs').readFileSync(filename, 'utf8');
-  // return require('fs').readFileSync(filename + '.in.1', 'utf8');
-  // return require('fs').readFileSync(filename + '.in.2', 'utf8');
-  // return require('fs').readFileSync(filename + '.in.4', 'utf8');
 };
 
 const splitAt = (str, n) => [String(str).slice(0, n), String(str).slice(n)];
@@ -17,6 +14,13 @@ const decToBin = (dec) => String(dec.toString(2)).padStart(4, '0');
 const hexToDec = (hex) => parseInt(hex, 16);
 const range = (start, end) => Array.from({ length: end - start }, (_, i) => start + i);
 const range0 = (end) => range(0, end);
+const sum = (...args) => args.flat(Infinity).reduce((a, b) => a + b, 0);
+const product = (...args) => args.flat(Infinity).reduce((a, b) => a * b, 1);
+const max = (...args) => Math.max(...args.flat(Infinity));
+const min = (...args) => Math.min(...args.flat(Infinity));
+const gt = ([lhs, rhs]) => lhs > rhs ? 1 : 0;
+const lt = ([lhs, rhs]) => lhs < rhs ? 1 : 0;
+const eq = ([lhs, rhs]) => lhs === rhs ? 1 : 0;
 
 const hexString = getProblemText().trim();
 const bitStringFromHexString = hexString.match(/[0-9a-f]/ig)
@@ -128,3 +132,31 @@ const answer1 = ((initBitString) => {
   return traversePacketVersionSum(packets);
 })(bitStringFromHexString);
 console.log('answer1', answer1);
+
+const evalPacket = (packet) => {
+  const id = (packet) => packet;
+  const functions = [sum, product, min, max, id, gt, lt, eq];
+  if (packet.type === 4) {
+    return packet.value;
+  }
+
+  const fn = functions[packet.type];
+  return fn(packet.subPackets.map(evalPacket));
+};
+
+const answer2 = ((initBitString) => {
+  const packets = [];
+  let rest = initBitString;
+  while (rest.length > 0) {
+    const [packet, newRest] = pickPacket(rest);
+    if (packet) {
+      packets.push(packet);
+      rest = newRest;
+    } else {
+      break;
+    }
+  }
+  console.assert(packets.length < 2);
+  return evalPacket(packets[0]);
+})(bitStringFromHexString);
+console.log('answer2', answer2);
