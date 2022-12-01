@@ -1,0 +1,9 @@
+{
+  "extends":["@flandredaisuki"],
+  "globals": {
+    "globalThis": "readonly"
+  },
+  "rules": {
+    "no-console": "off"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "advent-of-code",
+  "version": "2022",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@flandredaisuki/eslint-config": "^0.0.2",
+    "eslint": "^8.28.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
