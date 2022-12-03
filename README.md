@@ -2,6 +2,8 @@
 
 [Homepage](https://adventofcode.com/2022)
 
+Self Challenge: no deps
+
 ## Build image
 
 ```shell
