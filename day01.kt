@@ -18,6 +18,9 @@ class AOC2022 {
           }
         val elvesCalories = elvesWithFoods.map { it.sum() }
         println("answer1 ${elvesCalories.max()}")
+
+        val topThreeElvesCalories = elvesCalories.sortedDescending().slice(IntRange(0, 2))
+        println("answer2 ${topThreeElvesCalories.sum()}")
     }
   }
 }
