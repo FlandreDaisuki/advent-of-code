@@ -11,6 +11,9 @@ const getProblemText = () => {
 /** @param {number[]} arr */
 const sum = (arr) => Array.from(arr).reduce((a, b) => a + b, 0);
 
+/** @param {number[]} arr */
+const min = (arr) => Array.from(arr).reduce((a, b) => Math.min(a, b), Infinity);
+
 /** @param {string} text */
 const splitLines = (text, separator = '\n') => text.split(separator)
   .map((line) => line.trim())
@@ -20,89 +23,103 @@ const commandsAndOutputs = splitLines(getProblemText());
 
 const createDir = (name) => ({ name, parent: null, children: [], size: 0 });
 const createFile = (name, size) => ({ name, size });
-const root = createDir('/');
-let cwd = root;
 
-const mkdir = (cwd, dirname) => {
+/**
+ * $ mkdir -p \<dirname>
+ * @param {Object} param
+ * @param {string} param.cwd
+ * @param {string} param.dirname
+ */
+const mkdir = ({ cwd, dirname }) => {
   const directory = createDir(dirname);
-  cwd.children.push(directory);
   directory.parent = cwd;
+  cwd.children.push(directory);
 };
 
-for (const line of commandsAndOutputs) {
-  if (line.startsWith('$ cd')) {
+/**
+ * $ dd if=/dev/zero of=\<filename> bs=\<size_in_bytes> count=1
+ * @param {Object} param
+ * @param {string} param.cwd
+ * @param {string} param.of
+ * @param {number} param.bs
+ */
+const dd = ({ cwd, of, bs }) => {
+  cwd.children.push(createFile(of, bs));
+
+  // update size until root
+  let cursor = cwd;
+  do {
+    cursor.size += bs;
+    cursor = cursor.parent;
+  } while (cursor !== null);
+};
+
+/**
+ * $ stat -c %s \<filename>
+ * @param {{size: number}} node
+ */
+const statSize = (node) => node.size;
+
+
+const systemRoot = commandsAndOutputs.reduce((state, line) => {
+  if (/\$ cd \S+/.test(line)) {
     const target = line.split(' ').pop();
-    if (target === '..') {
-      cwd = cwd.parent;
+    if (target === '/') {
+      state.cwd = state.root;
     }
-    else if (target === '/') {
-      cwd = root;
+    else if (target === '..') {
+      state.cwd = state.cwd.parent;
     }
     else {
-      cwd = cwd.children.find((child) => child.name === target);
+      state.cwd = state.cwd.children.find((child) => child.name === target);
     }
   }
-  else if (line.startsWith('dir')){
-    const dirname = line.replace(/^dir\s*/, '');
-    mkdir(cwd, dirname);
+  else if (/\$ ls/.test(line)) {
+    // do nothing
   }
-  else if (/^\d+ \w+/.test(line)){
+  else if (/dir \w+/.test(line)) {
+    const dirname = line.split(' ').pop();
+    mkdir({ cwd: state.cwd, dirname });
+  }
+  else if (/\d+ \w+/.test(line)){
     const [sizeStr, filename] = line.split(' ');
     const fileSize = Number(sizeStr);
-    cwd.children.push(createFile(filename, fileSize ));
+    dd({ cwd: state.cwd, of: filename, bs: fileSize });
+  }
 
-    let cursor = cwd;
-    do {
-      cursor.size += fileSize;
-      cursor = cursor.parent;
-    } while (cursor !== null);
-  }
-  else if (line === '$ ls') {
-    // just ignore
-  }
-}
+  return state;
+}, { cwd: null, root: createDir('/') }).root;
 
 const isDir = (node) => Object.hasOwn(node, 'children');
-const traverse = (node, cb) => {
+const isFile = (node) => !isDir(node);
+
+const traverseBy = (node, predicate) => {
   if (!isDir(node)) {
-    cb({ type: 'file', node });
+    return predicate(node) ? [node] : [];
   }
-  else {
-    for (const child of node.children) {
-      traverse(child, cb);
-    }
-    cb({ type: 'dir', node });
-  }
+
+  return node.children.flatMap((child) => traverseBy(child, predicate))
+    .concat(predicate(node) ? [node] : []);
 };
 
-const lessThan100KDirs = [];
-traverse(root, ({ type, node }) => {
-  if (type === 'dir' && node.size < 100_000) {
-    lessThan100KDirs.push(node);
-  }
-});
-
-const answer1 = sum(lessThan100KDirs.map((node) => node.size));
+const answer1 = sum(
+  traverseBy(systemRoot, (node) => {
+    return isDir(node) && statSize(node) < 100_000;
+  })
+    .map(statSize),
+);
 
 console.log('answer1', answer1);
 
-let totalFileSize = 0;
-traverse(root, ({ type, node }) => {
-  if (type === 'file' ) {
-    totalFileSize += node.size;
-  }
-});
+const totalFileSize = sum(traverseBy(systemRoot, isFile).map(statSize));
+const threshold = totalFileSize - (70_000_000 - 30_000_000);
+console.assert(threshold > 0);
 
-const DELETE_THRESHOLD = totalFileSize - 40_000_000;
-console.assert(DELETE_THRESHOLD > 0);
-
-const greaterThanThresholdDirs = [];
-traverse(root, ({ type, node }) => {
-  if (type === 'dir' && node.size > DELETE_THRESHOLD) {
-    greaterThanThresholdDirs.push(node);
-  }
-});
-
-const answer2 = Math.min(...greaterThanThresholdDirs.map((node) => node.size));
+const answer2 = min(
+  traverseBy(systemRoot, (node) => {
+    return isDir(node) && statSize(node) > threshold;
+  })
+    .map(statSize),
+);
 
 console.log('answer2', answer2);
