@@ -1,5 +1,8 @@
 {
   "extends":["@flandredaisuki"],
+  "env": {
+    "es2020": true
+  },
   "parserOptions": {
     "ecmaVersion": "latest"
   },
